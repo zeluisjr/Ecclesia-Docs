@@ -52,7 +52,7 @@
         background: white;
         -webkit-print-color-adjust: exact;
       }
-      header, footer, button, .no-print, nav {
+      header, footer, button, .no-print, nav, .modal-overlay {
         display: none !important;
       }
       main {
@@ -151,7 +151,12 @@
       UserPlus: (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></Icon>,
       Send: (p) => <Icon {...p}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></Icon>,
       Heart: (p) => <Icon {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></Icon>,
-      Users: (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>
+      Users: (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>,
+      AlignLeft: (p) => <Icon {...p}><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></Icon>,
+      AlignCenter: (p) => <Icon {...p}><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></Icon>,
+      AlignRight: (p) => <Icon {...p}><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></Icon>,
+      X: (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></Icon>,
+      FileText: (p) => <Icon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></Icon>,
     };
 
     // --- ASSETS SVG (Shapes) ---
@@ -173,12 +178,12 @@
 
     // --- HELPERS E CONSTANTES ---
 
-    // A4 Pixels at 96 DPI
     const A4_WIDTH_PX = 794;
     const A4_HEIGHT_PX = 1123;
     const STORAGE_KEY = 'ecclesia_saved_templates_v1';
+    const SETTINGS_KEY = 'ecclesia_template_types_v1';
 
-    // Renderer do layout visual
+    // Renderer Genérico (Visual)
     const renderVisualLayout = (data, layout, background) => {
       return (
         <div className="w-full h-full relative bg-white overflow-hidden">
@@ -231,51 +236,9 @@
       );
     };
 
-    // Definição de Templates
-    const TEMPLATES = [
-      {
-        id: 'custom_upload',
-        name: 'Editor Visual (Customizável)',
-        description: 'Arraste campos, mude o fundo e crie seu layout.',
-        icon: <Icons.Upload className="w-6 h-6" />,
-        color: 'bg-gray-800 text-white',
-        fields: [
-            { name: 'title', label: 'Título Principal', type: 'text', defaultValue: 'CERTIFICADO' },
-            { name: 'recipientName', label: 'Nome do Beneficiário', type: 'text' },
-            { name: 'bodyText', label: 'Texto Descritivo', type: 'textarea' },
-            { name: 'date', label: 'Data', type: 'date' },
-            { name: 'footerText', label: 'Rodapé / Assinatura', type: 'text' },
-            { name: 'logo', label: 'Logo / Imagem Extra', type: 'image' }
-        ],
-        defaultLayout: [
-            { id: '1', fieldKey: 'title', label: 'CERTIFICADO', x: 250, y: 100, fontSize: 48, align: 'center', width: 300, color: '#000000' },
-            { id: '2', fieldKey: 'recipientName', label: '{Nome da Pessoa}', x: 100, y: 300, fontSize: 32, align: 'center', width: 600, color: '#333333' },
-            { id: '3', fieldKey: 'bodyText', label: '{Texto Descritivo}', x: 100, y: 400, fontSize: 18, align: 'center', width: 600, color: '#555555' },
-            { id: '4', fieldKey: 'date', label: '{Data}', x: 100, y: 800, fontSize: 16, align: 'left', color: '#000000' },
-            { id: '5', fieldKey: 'footerText', label: '{Assinatura}', x: 500, y: 800, fontSize: 16, align: 'right', width: 200, color: '#000000' },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return <div className="p-10">Use o Editor para configurar este modelo.</div>;
-        }
-      },
-      {
-        id: 'id_card',
-        name: 'Carteirinha de Membro',
-        description: 'Cartão de identificação com foto.',
-        icon: <Icons.CreditCard className="w-6 h-6" />,
-        color: 'bg-blue-100 text-blue-600',
-        fields: [
-          { name: 'churchName', label: 'Nome da Igreja', type: 'text', placeholder: 'Ex: Igreja Batista', required: true },
-          { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
-          { name: 'role', label: 'Cargo / Função', type: 'text', placeholder: 'Ex: Membro, Diácono' },
-          { name: 'since', label: 'Membro Desde', type: 'date' },
-          { name: 'photo', label: 'Foto do Membro', type: 'image' },
-          { name: 'validity', label: 'Validade', type: 'date' },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return (
+    // Renderers Hardcoded (Sistema)
+    const TEMPLATE_RENDERERS = {
+      'id_card': (data) => (
           <div className="flex items-center justify-center h-full p-8 bg-gray-100">
             <div className="w-[500px] h-[316px] bg-white rounded-xl shadow-xl overflow-hidden relative flex border border-gray-200">
               <div className="absolute top-0 right-0 w-32 h-full bg-blue-600 transform skew-x-[-15deg] translate-x-10"></div>
@@ -288,7 +251,7 @@
                     <p className="text-xs text-blue-500 font-medium tracking-widest uppercase mt-1">Membro</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                    <Icons.Users className="w-6 h-6" />
+                    <Icon className="w-6 h-6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>
                   </div>
                 </div>
 
@@ -298,7 +261,7 @@
                       <img src={data.photo} alt="Foto" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                        <Icons.Users className="w-8 h-8" />
+                        <Icon className="w-8 h-8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>
                       </div>
                     )}
                   </div>
@@ -325,24 +288,8 @@
               </div>
             </div>
           </div>
-        )}
-      },
-      {
-        id: 'certificate_baptism',
-        name: 'Certificado de Batismo',
-        description: 'Elegante, para batismos nas águas.',
-        icon: <Icons.Scroll className="w-6 h-6" />,
-        color: 'bg-emerald-100 text-emerald-600',
-        fields: [
-          { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
-          { name: 'recipientName', label: 'Nome do Batizando', type: 'text', required: true },
-          { name: 'date', label: 'Data do Batismo', type: 'date', required: true },
-          { name: 'ministerName', label: 'Nome do Pastor', type: 'text', required: true },
-          { name: 'city', label: 'Cidade', type: 'text' },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return (
+      ),
+      'certificate_baptism': (data) => (
           <div className="p-8 bg-white h-full border-[16px] border-double border-emerald-900 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center text-emerald-900 pointer-events-none">
                 <DoveIcon />
@@ -373,24 +320,8 @@
               </div>
             </div>
           </div>
-        )}
-      },
-      {
-        id: 'marriage',
-        name: 'Certidão de Casamento',
-        description: 'Religioso com efeito civil ou cerimônia.',
-        icon: <Icons.Heart className="w-6 h-6" />,
-        color: 'bg-rose-100 text-rose-600',
-        fields: [
-           { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
-           { name: 'spouse1', label: 'Cônjuge 1', type: 'text', required: true },
-           { name: 'spouse2', label: 'Cônjuge 2', type: 'text', required: true },
-           { name: 'date', label: 'Data da Cerimônia', type: 'date', required: true },
-           { name: 'ministerName', label: 'Oficiante', type: 'text', required: true },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return (
+      ),
+      'marriage': (data) => (
           <div className="p-10 bg-white h-full border-4 border-rose-900/20 flex flex-col items-center text-center shadow-sm relative font-serif">
              <div className="absolute top-0 left-0 w-full h-full border-[20px] border-white pointer-events-none"></div>
              <div className="absolute top-4 left-4 right-4 bottom-4 border border-rose-200 pointer-events-none flex items-center justify-center">
@@ -428,25 +359,8 @@
                  </div>
              </div>
           </div>
-        )}
-      },
-      {
-        id: 'baby_dedication',
-        name: 'Apresentação de Bebê',
-        description: 'Certificado de consagração de crianças.',
-        icon: <Icons.UserPlus className="w-6 h-6" />,
-        color: 'bg-amber-100 text-amber-600',
-        fields: [
-            { name: 'churchName', label: 'Nome da Igreja', type: 'text' },
-            { name: 'childName', label: 'Nome da Criança', type: 'text', required: true },
-            { name: 'parents', label: 'Nome dos Pais', type: 'text', required: true },
-            { name: 'date', label: 'Data', type: 'date' },
-            { name: 'ministerName', label: 'Pastor', type: 'text' },
-            { name: 'verse', label: 'Versículo (Opcional)', type: 'textarea' },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return (
+      ),
+      'baby_dedication': (data) => (
           <div className="p-8 bg-amber-50/30 h-full border-8 border-amber-200 flex flex-col items-center text-center shadow-sm relative rounded-xl">
             <div className="mt-12 mb-6">
                 <h1 className="text-4xl font-serif text-amber-800 font-bold uppercase tracking-widest">Apresentação</h1>
@@ -482,25 +396,8 @@
                 <p className="text-xs text-gray-500 uppercase">Pastor Responsável</p>
             </div>
           </div>
-        )}
-      },
-      {
-        id: 'transfer_letter',
-        name: 'Carta de Transferência',
-        description: 'Documento formal de recomendação.',
-        icon: <Icons.Send className="w-6 h-6" />,
-        color: 'bg-purple-100 text-purple-600',
-        fields: [
-            { name: 'churchName', label: 'Igreja Remetente', type: 'text', required: true },
-            { name: 'city', label: 'Cidade', type: 'text' },
-            { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
-            { name: 'destChurch', label: 'Igreja de Destino', type: 'text' },
-            { name: 'admissionDate', label: 'Data de Admissão', type: 'date' },
-            { name: 'ministerName', label: 'Pastor', type: 'text', required: true },
-        ],
-        render: (data, layout, bg) => {
-            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
-            return (
+      ),
+      'transfer_letter': (data) => (
           <div className="p-16 bg-white h-full text-left font-serif text-gray-800 leading-relaxed shadow-sm">
             <header className="border-b-2 border-gray-800 pb-6 mb-8 flex justify-between items-end">
                 <div>
@@ -544,15 +441,305 @@
                 </div>
             </footer>
           </div>
-        )}
+      )
+    };
+
+    // Dados Iniciais dos Templates (Separado da lógica de render)
+    const INITIAL_TEMPLATES = [
+      {
+        id: 'custom_upload',
+        name: 'Editor Visual (Customizável)',
+        description: 'Arraste campos, mude o fundo e crie seu layout.',
+        iconName: 'Upload',
+        color: 'bg-gray-800 text-white',
+        fields: [
+            { name: 'title', label: 'Título Principal', type: 'text' },
+            { name: 'recipientName', label: 'Nome do Beneficiário', type: 'text' },
+            { name: 'bodyText', label: 'Texto Descritivo', type: 'textarea' },
+            { name: 'date', label: 'Data', type: 'date' },
+            { name: 'footerText', label: 'Rodapé / Assinatura', type: 'text' },
+            { name: 'logo', label: 'Logo / Imagem Extra', type: 'image' }
+        ],
+        defaultLayout: [
+            { id: '1', fieldKey: 'title', label: 'CERTIFICADO', x: 250, y: 100, fontSize: 48, align: 'center', width: 300, color: '#000000' },
+            { id: '2', fieldKey: 'recipientName', label: '{Nome da Pessoa}', x: 100, y: 300, fontSize: 32, align: 'center', width: 600, color: '#333333' },
+            { id: '3', fieldKey: 'bodyText', label: '{Texto Descritivo}', x: 100, y: 400, fontSize: 18, align: 'center', width: 600, color: '#555555' },
+            { id: '4', fieldKey: 'date', label: '{Data}', x: 100, y: 800, fontSize: 16, align: 'left', color: '#000000' },
+            { id: '5', fieldKey: 'footerText', label: '{Assinatura}', x: 500, y: 800, fontSize: 16, align: 'right', width: 200, color: '#000000' },
+        ]
+      },
+      {
+        id: 'id_card',
+        name: 'Carteirinha de Membro',
+        description: 'Cartão de identificação com foto.',
+        iconName: 'CreditCard',
+        color: 'bg-blue-100 text-blue-600',
+        fields: [
+          { name: 'churchName', label: 'Nome da Igreja', type: 'text', placeholder: 'Ex: Igreja Batista', required: true },
+          { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
+          { name: 'role', label: 'Cargo / Função', type: 'text', placeholder: 'Ex: Membro, Diácono' },
+          { name: 'since', label: 'Membro Desde', type: 'date' },
+          { name: 'photo', label: 'Foto do Membro', type: 'image' },
+          { name: 'validity', label: 'Validade', type: 'date' },
+        ]
+      },
+      {
+        id: 'certificate_baptism',
+        name: 'Certificado de Batismo',
+        description: 'Elegante, para batismos nas águas.',
+        iconName: 'Scroll',
+        color: 'bg-emerald-100 text-emerald-600',
+        fields: [
+          { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
+          { name: 'recipientName', label: 'Nome do Batizando', type: 'text', required: true },
+          { name: 'date', label: 'Data do Batismo', type: 'date', required: true },
+          { name: 'ministerName', label: 'Nome do Pastor', type: 'text', required: true },
+          { name: 'city', label: 'Cidade', type: 'text' },
+        ]
+      },
+      {
+        id: 'marriage',
+        name: 'Certidão de Casamento',
+        description: 'Religioso com efeito civil ou cerimônia.',
+        iconName: 'Heart',
+        color: 'bg-rose-100 text-rose-600',
+        fields: [
+           { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
+           { name: 'spouse1', label: 'Cônjuge 1', type: 'text', required: true },
+           { name: 'spouse2', label: 'Cônjuge 2', type: 'text', required: true },
+           { name: 'date', label: 'Data da Cerimônia', type: 'date', required: true },
+           { name: 'ministerName', label: 'Oficiante', type: 'text', required: true },
+        ]
+      },
+      {
+        id: 'baby_dedication',
+        name: 'Apresentação de Bebê',
+        description: 'Certificado de consagração de crianças.',
+        iconName: 'UserPlus',
+        color: 'bg-amber-100 text-amber-600',
+        fields: [
+            { name: 'churchName', label: 'Nome da Igreja', type: 'text' },
+            { name: 'childName', label: 'Nome da Criança', type: 'text', required: true },
+            { name: 'parents', label: 'Nome dos Pais', type: 'text', required: true },
+            { name: 'date', label: 'Data', type: 'date' },
+            { name: 'ministerName', label: 'Pastor', type: 'text' },
+            { name: 'verse', label: 'Versículo (Opcional)', type: 'textarea' },
+        ]
+      },
+      {
+        id: 'transfer_letter',
+        name: 'Carta de Transferência',
+        description: 'Documento formal de recomendação.',
+        iconName: 'Send',
+        color: 'bg-purple-100 text-purple-600',
+        fields: [
+            { name: 'churchName', label: 'Igreja Remetente', type: 'text', required: true },
+            { name: 'city', label: 'Cidade', type: 'text' },
+            { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
+            { name: 'destChurch', label: 'Igreja de Destino', type: 'text' },
+            { name: 'admissionDate', label: 'Data de Admissão', type: 'date' },
+            { name: 'ministerName', label: 'Pastor', type: 'text', required: true },
+        ]
       }
     ];
+
+    // --- COMPONENTE: MODAL DE CONFIGURAÇÕES ---
+    const SettingsModal = ({ isOpen, onClose, templates, onSave, onDelete }) => {
+        const [view, setView] = useState('list'); // 'list', 'edit'
+        const [editingTemplate, setEditingTemplate] = useState(null);
+
+        // Edit Form State
+        const [formName, setFormName] = useState('');
+        const [formDesc, setFormDesc] = useState('');
+        const [formIcon, setFormIcon] = useState('FileText');
+        const [formFields, setFormFields] = useState([]);
+
+        const resetForm = () => {
+            setFormName('');
+            setFormDesc('');
+            setFormIcon('FileText');
+            setFormFields([]);
+            setEditingTemplate(null);
+        };
+
+        const handleEdit = (tmpl) => {
+            setEditingTemplate(tmpl);
+            setFormName(tmpl.name);
+            setFormDesc(tmpl.description);
+            setFormIcon(tmpl.iconName || 'FileText');
+            setFormFields([...tmpl.fields]);
+            setView('edit');
+        };
+
+        const handleCreate = () => {
+            resetForm();
+            setFormFields([
+                { name: 'title', label: 'Título', type: 'text' },
+                { name: 'date', label: 'Data', type: 'date' }
+            ]);
+            setView('edit');
+        };
+
+        const handleSaveForm = () => {
+            if(!formName) return alert('O nome é obrigatório');
+            
+            const newTemplate = {
+                id: editingTemplate ? editingTemplate.id : `custom_${Date.now()}`,
+                name: formName,
+                description: formDesc || 'Modelo personalizado',
+                iconName: formIcon,
+                color: editingTemplate ? editingTemplate.color : 'bg-gray-100 text-gray-600',
+                fields: formFields,
+                // Preservar layout se existir e estivermos editando
+                defaultLayout: editingTemplate?.defaultLayout || []
+            };
+
+            onSave(newTemplate);
+            setView('list');
+        };
+
+        const addField = () => {
+            setFormFields([...formFields, { name: `field_${Date.now()}`, label: 'Novo Campo', type: 'text' }]);
+        };
+
+        const updateField = (idx, key, val) => {
+            const updated = [...formFields];
+            updated[idx] = { ...updated[idx], [key]: val };
+            // Atualiza o name automaticamente baseado no label se for novo
+            if(key === 'label') {
+               const autoName = val.toLowerCase().replace(/[^a-z0-9]/g, '_');
+               if(updated[idx].name.startsWith('field_')) updated[idx].name = autoName;
+            }
+            setFormFields(updated);
+        };
+
+        const removeField = (idx) => {
+            setFormFields(formFields.filter((_, i) => i !== idx));
+        };
+
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm modal-overlay" onClick={onClose}></div>
+                <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col animate-fade-in">
+                    
+                    <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 className="font-bold text-lg">Configurar Modelos</h3>
+                        <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
+                    </div>
+
+                    <div className="p-6 overflow-y-auto flex-1">
+                        {view === 'list' && (
+                            <div className="space-y-4">
+                                <button onClick={handleCreate} className="w-full py-3 border-2 border-dashed border-indigo-300 rounded-xl text-indigo-600 font-medium hover:bg-indigo-50 flex items-center justify-center gap-2 transition-colors">
+                                    <Icons.Plus className="w-5 h-5" /> Adicionar Novo Tipo de Documento
+                                </button>
+                                
+                                <div className="space-y-2">
+                                    {templates.map(t => (
+                                        <div key={t.id} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-shadow">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${t.color ? t.color.replace('text-', 'text-current ') : 'bg-gray-100'}`}>
+                                                    {Icons[t.iconName] ? Icons[t.iconName]({className:"w-5 h-5"}) : <Icons.FileText className="w-5 h-5" />}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-sm">{t.name}</h4>
+                                                    <p className="text-xs text-gray-500">{t.fields.length} campos</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => handleEdit(t)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                                    <Icons.Edit3 className="w-4 h-4" />
+                                                </button>
+                                                {/* Prevent deleting the core visual editor template */}
+                                                {t.id !== 'custom_upload' && (
+                                                    <button onClick={() => { if(confirm('Excluir este modelo?')) onDelete(t.id); }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                        <Icons.Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'edit' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Modelo</label>
+                                        <input className="w-full p-2 border rounded-lg" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Recibo de Dizimo" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrição</label>
+                                        <input className="w-full p-2 border rounded-lg" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Descrição curta" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ícone</label>
+                                        <select className="w-full p-2 border rounded-lg bg-white" value={formIcon} onChange={e => setFormIcon(e.target.value)}>
+                                            {Object.keys(Icons).map(k => <option key={k} value={k}>{k}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase">Campos do Formulário</label>
+                                        <button onClick={addField} type="button" className="text-xs flex items-center gap-1 text-indigo-600 font-bold hover:underline">
+                                            <Icons.Plus className="w-3 h-3" /> Adicionar Campo
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2 bg-gray-50 p-3 rounded-xl max-h-[300px] overflow-y-auto">
+                                        {formFields.map((field, idx) => (
+                                            <div key={idx} className="flex gap-2 items-center">
+                                                <input className="flex-1 p-2 text-sm border rounded shadow-sm" placeholder="Nome do Campo" value={field.label} onChange={e => updateField(idx, 'label', e.target.value)} />
+                                                <select className="w-24 p-2 text-sm border rounded shadow-sm bg-white" value={field.type} onChange={e => updateField(idx, 'type', e.target.value)}>
+                                                    <option value="text">Texto</option>
+                                                    <option value="textarea">Área</option>
+                                                    <option value="date">Data</option>
+                                                    <option value="image">Imagem</option>
+                                                    <option value="currency">Moeda</option>
+                                                </select>
+                                                <button onClick={() => removeField(idx)} className="text-red-400 hover:text-red-600 p-1"><Icons.Trash2 className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                        {formFields.length === 0 && <p className="text-center text-xs text-gray-400 py-4">Nenhum campo definido.</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {view === 'edit' && (
+                        <div className="p-4 border-t bg-gray-50 flex justify-end gap-2">
+                            <button onClick={() => setView('list')} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg">Cancelar</button>
+                            <button onClick={handleSaveForm} className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200">Salvar Modelo</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     // --- COMPONENTE PRINCIPAL (APP) ---
     function App() {
       const [step, setStep] = useState(1);
       const [selectedTemplateId, setSelectedTemplateId] = useState('');
       const [formData, setFormData] = useState({});
+      const [showSettings, setShowSettings] = useState(false);
+      
+      // State dos Templates (Carregado do LocalStorage ou Inicial)
+      const [templates, setTemplates] = useState(() => {
+          const saved = localStorage.getItem(SETTINGS_KEY);
+          return saved ? JSON.parse(saved) : INITIAL_TEMPLATES;
+      });
+
+      // Salvar templates no LocalStorage sempre que mudar
+      useEffect(() => {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(templates));
+      }, [templates]);
       
       // State do Editor Visual
       const [isEditMode, setIsEditMode] = useState(false);
@@ -560,7 +747,7 @@
       const [customBackground, setCustomBackground] = useState(undefined);
       const [selectedElementId, setSelectedElementId] = useState(null);
 
-      // State de Templates Salvos
+      // State de Templates Salvos (Instâncias salvas pelo usuário)
       const [savedTemplates, setSavedTemplates] = useState([]);
       
       // Dragging state
@@ -568,10 +755,10 @@
       const canvasRef = useRef(null);
 
       // Helper to get active template
-      const activeTemplate = TEMPLATES.find(t => t.id === selectedTemplateId) || TEMPLATES[0];
+      const activeTemplate = templates.find(t => t.id === selectedTemplateId) || templates[0];
 
       useEffect(() => {
-        // Carregar templates salvos do LocalStorage
+        // Carregar templates salvos (instâncias) do LocalStorage
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           try {
@@ -585,7 +772,7 @@
       useEffect(() => {
         // Ao selecionar template padrão (não salvo), carregar layout padrão
         if (selectedTemplateId && !selectedTemplateId.startsWith('saved_')) {
-            const t = TEMPLATES.find(temp => temp.id === selectedTemplateId);
+            const t = templates.find(temp => temp.id === selectedTemplateId);
             if (t) {
                 if (t.defaultLayout) {
                     setLayoutElements(t.defaultLayout);
@@ -595,7 +782,7 @@
                 setCustomBackground(t.defaultBackground);
             }
         }
-      }, [selectedTemplateId]);
+      }, [selectedTemplateId, templates]);
 
       // --- Handlers do Formulário de Dados ---
       const handleTextChange = (e) => {
@@ -738,11 +925,32 @@
           setStep(2);
       };
 
+      // --- Gerenciamento de Tipos de Templates (Settings) ---
+      const handleSaveTemplateType = (newType) => {
+          setTemplates(prev => {
+              const exists = prev.findIndex(t => t.id === newType.id);
+              if (exists >= 0) {
+                  const updated = [...prev];
+                  updated[exists] = newType;
+                  return updated;
+              }
+              return [...prev, newType];
+          });
+      };
+
+      const handleDeleteTemplateType = (id) => {
+          setTemplates(prev => prev.filter(t => t.id !== id));
+          if(selectedTemplateId === id) setSelectedTemplateId('');
+      };
+
       // --- Navegação ---
       const handleTemplateSelect = (id) => {
         setSelectedTemplateId(id);
-        const template = TEMPLATES.find(t => t.id === id);
-        if (id === 'custom_upload') {
+        const template = templates.find(t => t.id === id);
+        // Se for o custom_upload OU se for um template criado pelo usuário (não tem renderer hardcoded)
+        const isCustom = id === 'custom_upload' || !TEMPLATE_RENDERERS[id];
+
+        if (isCustom) {
             setIsEditMode(true);
             setStep(1.5); 
         } else {
@@ -764,7 +972,17 @@
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
       };
 
-      // --- Renders ---
+      // --- Render Logic ---
+      const renderDocument = (template, data, layout, bg) => {
+          // 1. Tenta renderizador hardcoded (Sistema)
+          if (TEMPLATE_RENDERERS[template.id] && !isEditMode) {
+              return TEMPLATE_RENDERERS[template.id](data);
+          }
+          // 2. Fallback para Visual Renderer (Custom)
+          return renderVisualLayout(data, layout || [], bg);
+      };
+
+      // --- Renders UI ---
       const renderFieldInput = (field) => {
         const commonClasses = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400";
         
@@ -861,6 +1079,14 @@
       return (
         <div className="min-h-screen bg-gray-50/50 text-gray-900 font-sans selection:bg-indigo-100">
           
+          <SettingsModal 
+              isOpen={showSettings} 
+              onClose={() => setShowSettings(false)}
+              templates={templates}
+              onSave={handleSaveTemplateType}
+              onDelete={handleDeleteTemplateType}
+          />
+
           {/* HEADER */}
           <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-white/90">
             <div className="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
@@ -891,7 +1117,7 @@
                          <Icons.Edit3 className="w-4 h-4" /> Editar Layout
                      </button>
                  )}
-                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                 <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
                     <Icons.Settings className="w-5 h-5" />
                  </button>
               </div>
@@ -911,7 +1137,7 @@
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                        {TEMPLATES.map((template) => (
+                        {templates.map((template) => (
                             <button 
                             key={template.id}
                             onClick={() => handleTemplateSelect(template.id)}
@@ -923,7 +1149,7 @@
                             >
                             <div className={`p-6 flex-grow flex flex-col items-center text-center`}>
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${template.color} transition-transform group-hover:scale-110 duration-300`}>
-                                {template.icon}
+                                  {Icons[template.iconName] ? Icons[template.iconName]({className:"w-6 h-6"}) : <Icons.FileText className="w-6 h-6" />}
                                 </div>
                                 <h3 className="font-bold text-lg text-gray-900 mb-2 font-serif">{template.name}</h3>
                                 <p className="text-sm text-gray-500 leading-relaxed">{template.description}</p>
@@ -972,7 +1198,8 @@
                     <button 
                         onClick={() => {
                              if (!selectedTemplateId) return;
-                             if (selectedTemplateId === 'custom_upload') {
+                             const isCustom = selectedTemplateId === 'custom_upload' || !TEMPLATE_RENDERERS[selectedTemplateId];
+                             if (isCustom) {
                                  setStep(1.5);
                                  setIsEditMode(true);
                              } else {
@@ -1095,7 +1322,7 @@
 
                                              <div className="flex gap-2">
                                                 <div className="flex-1">
-                                                    <label className="text-[10px] text-gray-500">Tam. Fonte</label>
+                                                    <label className="text-[10px] text-gray-500">Tam. Fonte (px)</label>
                                                     <input 
                                                         type="number" 
                                                         value={el.fontSize} 
@@ -1104,27 +1331,46 @@
                                                     />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <label className="text-[10px] text-gray-500">Cor</label>
+                                                    <label className="text-[10px] text-gray-500">Largura (px)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={el.width || ''} 
+                                                        placeholder="Auto"
+                                                        onChange={(e) => updateElementStyle(el.id, 'width', e.target.value ? Number(e.target.value) : undefined)}
+                                                        className="w-full text-xs p-1 border rounded"
+                                                    />
+                                                </div>
+                                             </div>
+                                             
+                                              {/* Color and Align row */}
+                                             <div className="flex gap-2 items-end">
+                                                <div className="w-1/3">
+                                                    <label className="text-[10px] text-gray-500 block mb-1">Cor</label>
                                                     <input 
                                                         type="color" 
                                                         value={el.color || '#000000'} 
                                                         onChange={(e) => updateElementStyle(el.id, 'color', e.target.value)}
-                                                        className="w-full h-6 border rounded cursor-pointer"
+                                                        className="w-full h-8 border rounded cursor-pointer"
                                                     />
                                                 </div>
-                                             </div>
-                                             <div>
-                                                <label className="text-[10px] text-gray-500">Alinhamento</label>
-                                                <div className="flex bg-gray-100 rounded p-1 gap-1">
-                                                    {['left', 'center', 'right'].map(align => (
-                                                        <button
-                                                            key={align}
-                                                            onClick={() => updateElementStyle(el.id, 'align', align)}
-                                                            className={`flex-1 text-[10px] py-1 rounded ${el.align === align ? 'bg-white shadow' : 'text-gray-500'}`}
-                                                        >
-                                                            {align === 'left' ? 'Esq' : align === 'center' ? 'Cen' : 'Dir'}
-                                                        </button>
-                                                    ))}
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] text-gray-500 block mb-1">Alinhamento</label>
+                                                    <div className="flex bg-gray-100 rounded p-1 gap-1 h-8 items-center">
+                                                        {[
+                                                            { id: 'left', icon: <Icons.AlignLeft className="w-3 h-3" /> },
+                                                            { id: 'center', icon: <Icons.AlignCenter className="w-3 h-3" /> },
+                                                            { id: 'right', icon: <Icons.AlignRight className="w-3 h-3" /> }
+                                                        ].map(opt => (
+                                                            <button
+                                                                key={opt.id}
+                                                                onClick={() => updateElementStyle(el.id, 'align', opt.id)}
+                                                                className={`flex-1 flex justify-center items-center h-full rounded transition-all ${el.align === opt.id ? 'bg-white shadow text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                                                                title={opt.id}
+                                                            >
+                                                                {opt.icon}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                              </div>
                                          </div>
@@ -1293,12 +1539,9 @@
                     <div 
                       className={`bg-white shadow-2xl print:shadow-none relative transform origin-top transition-transform duration-300 scale-fix
                       ${activeTemplate.id === 'id_card' && !isEditMode ? 'w-auto h-auto scale-100' : 'w-[794px] min-h-[1123px] scale-[0.45] sm:scale-[0.6] md:scale-[0.75] xl:scale-100'} `}
-                      style={isEditMode || activeTemplate.id === 'custom_upload' ? { width: '794px', height: '1123px' } : {}}
+                      style={isEditMode || activeTemplate.id === 'custom_upload' || !TEMPLATE_RENDERERS[activeTemplate.id] ? { width: '794px', height: '1123px' } : {}}
                     >
-                      {(isEditMode || activeTemplate.id === 'custom_upload')
-                        ? activeTemplate.render(formData, layoutElements, customBackground) 
-                        : activeTemplate.render(formData)
-                      }
+                       {renderDocument(activeTemplate, formData, layoutElements, customBackground)}
                     </div>
 
                   </div>
