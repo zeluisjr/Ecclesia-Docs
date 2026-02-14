@@ -1,0 +1,5 @@
+{
+  "name": "Ecclesia Docs",
+  "description": "A document generation tool specifically designed for church administrative needs, allowing creation of certificates, receipts, and agreements.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecclesia Docs - Gerador de Documentos</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Great+Vibes&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+            mono: ['Roboto Mono', 'monospace'],
+            script: ['Great Vibes', 'cursive'],
+          },
+          colors: {
+            church: {
+              50: '#f4f7fa',
+              100: '#e3ebf5',
+              500: '#6366f1',
+              600: '#4f46e5',
+              900: '#1e1b4b',
+            }
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Print specific overrides */
+    @media print {
+      @page {
+        margin: 0;
+        size: auto;
+      }
+      body {
+        background: white;
+        -webkit-print-color-adjust: exact;
+      }
+      header, footer, button, .no-print, nav {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+      }
+      .scale-fix {
+        transform: none !important;
+        width: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scrollbar Customization */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c7c7c7;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    // --- ÍCONES (Lucide Replacements) ---
+    // Componente base de ícone
+    const Icon = ({ children, className, ...props }) => (
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className={className} 
+        {...props}
+      >
+        {children}
+      </svg>
+    );
+
+    const Icons = {
+      Printer: (p) => <Icon {...p}><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></Icon>,
+      Mail: (p) => <Icon {...p}><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></Icon>,
+      ArrowRight: (p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></Icon>,
+      ArrowLeft: (p) => <Icon {...p}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></Icon>,
+      Settings: (p) => <Icon {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></Icon>,
+      Layout: (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></Icon>,
+      Church: (p) => <Icon {...p}><path d="M18 22v-6"></path><path d="M10 22v-6"></path><path d="M14 22v-6"></path><path d="M6 22V8l6-6 6 6v14"></path><path d="m6 8-3 3h3"></path><path d="m18 8 3 3h-3"></path></Icon>,
+      CheckCircle: (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></Icon>,
+      FileEdit: (p) => <Icon {...p}><path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-5.5"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M10.42 12.61a2.1 2.1 0 1 1 2.97 2.97L7.95 21 4 22l.99-3.95 5.43-5.44Z"></path></Icon>,
+      Upload: (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></Icon>,
+      Move: (p) => <Icon {...p}><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></Icon>,
+      Type: (p) => <Icon {...p}><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></Icon>,
+      Image: (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></Icon>,
+      Plus: (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></Icon>,
+      Trash2: (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></Icon>,
+      Edit3: (p) => <Icon {...p}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></Icon>,
+      Save: (p) => <Icon {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></Icon>,
+      Star: (p) => <Icon {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></Icon>,
+      CreditCard: (p) => <Icon {...p}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></Icon>,
+      Scroll: (p) => <Icon {...p}><path d="M8 17.8a4 4 0 1 0 4-4V2"></path><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5Z"></path></Icon>,
+      UserPlus: (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></Icon>,
+      Send: (p) => <Icon {...p}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></Icon>,
+      Heart: (p) => <Icon {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></Icon>,
+      Users: (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>
+    };
+
+    // --- ASSETS SVG (Shapes) ---
+    const DoveIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-current opacity-20">
+        <path d="M12 2C8 2 6 5 6 5C6 5 4.5 9 6.5 12C8.5 15 12 22 12 22C12 22 15.5 15 17.5 12C19.5 9 18 5 18 5C18 5 16 2 12 2Z" />
+        <path d="M12 22C12 22 8 16 8 12C8 9 9 7 12 7C15 7 16 9 16 12C16 16 12 22 12 22Z" />
+        <path d="M9 12H15" />
+        <path d="M12 9V15" />
+      </svg>
+    );
+
+    const RingsIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-rose-300">
+        <circle cx="8" cy="12" r="6" />
+        <circle cx="16" cy="12" r="6" />
+      </svg>
+    );
+
+    // --- HELPERS E CONSTANTES ---
+
+    // A4 Pixels at 96 DPI
+    const A4_WIDTH_PX = 794;
+    const A4_HEIGHT_PX = 1123;
+    const STORAGE_KEY = 'ecclesia_saved_templates_v1';
+
+    // Renderer do layout visual
+    const renderVisualLayout = (data, layout, background) => {
+      return (
+        <div className="w-full h-full relative bg-white overflow-hidden">
+          {background && (
+            <img 
+              src={background} 
+              className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none" 
+              alt="Background" 
+            />
+          )}
+          
+          {layout.map((el) => {
+            let content = el.isStaticText ? el.label : (data[el.fieldKey] || el.label);
+            const isImage = typeof content === 'string' && (content.startsWith('blob:') || content.startsWith('data:image'));
+
+            if (!isImage && !el.isStaticText && el.fieldKey.toLowerCase().includes('date') && data[el.fieldKey]) {
+                try { content = new Date(data[el.fieldKey]).toLocaleDateString(); } catch(e) {}
+            }
+
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: 'absolute',
+                  left: `${el.x}px`,
+                  top: `${el.y}px`,
+                  fontSize: `${el.fontSize}px`,
+                  fontFamily: el.fontFamily || 'serif',
+                  color: el.color || '#000',
+                  width: el.width ? `${el.width}px` : 'auto',
+                  textAlign: el.align || 'left',
+                  zIndex: 10,
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.4'
+                }}
+              >
+                {isImage ? (
+                    <img 
+                      src={content} 
+                      alt={el.label} 
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} 
+                    />
+                ) : (
+                    content
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
+
+    // Definição de Templates
+    const TEMPLATES = [
+      {
+        id: 'custom_upload',
+        name: 'Editor Visual (Customizável)',
+        description: 'Arraste campos, mude o fundo e crie seu layout.',
+        icon: <Icons.Upload className="w-6 h-6" />,
+        color: 'bg-gray-800 text-white',
+        fields: [
+            { name: 'title', label: 'Título Principal', type: 'text', defaultValue: 'CERTIFICADO' },
+            { name: 'recipientName', label: 'Nome do Beneficiário', type: 'text' },
+            { name: 'bodyText', label: 'Texto Descritivo', type: 'textarea' },
+            { name: 'date', label: 'Data', type: 'date' },
+            { name: 'footerText', label: 'Rodapé / Assinatura', type: 'text' },
+            { name: 'logo', label: 'Logo / Imagem Extra', type: 'image' }
+        ],
+        defaultLayout: [
+            { id: '1', fieldKey: 'title', label: 'CERTIFICADO', x: 250, y: 100, fontSize: 48, align: 'center', width: 300, color: '#000000' },
+            { id: '2', fieldKey: 'recipientName', label: '{Nome da Pessoa}', x: 100, y: 300, fontSize: 32, align: 'center', width: 600, color: '#333333' },
+            { id: '3', fieldKey: 'bodyText', label: '{Texto Descritivo}', x: 100, y: 400, fontSize: 18, align: 'center', width: 600, color: '#555555' },
+            { id: '4', fieldKey: 'date', label: '{Data}', x: 100, y: 800, fontSize: 16, align: 'left', color: '#000000' },
+            { id: '5', fieldKey: 'footerText', label: '{Assinatura}', x: 500, y: 800, fontSize: 16, align: 'right', width: 200, color: '#000000' },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return <div className="p-10">Use o Editor para configurar este modelo.</div>;
+        }
+      },
+      {
+        id: 'id_card',
+        name: 'Carteirinha de Membro',
+        description: 'Cartão de identificação com foto.',
+        icon: <Icons.CreditCard className="w-6 h-6" />,
+        color: 'bg-blue-100 text-blue-600',
+        fields: [
+          { name: 'churchName', label: 'Nome da Igreja', type: 'text', placeholder: 'Ex: Igreja Batista', required: true },
+          { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
+          { name: 'role', label: 'Cargo / Função', type: 'text', placeholder: 'Ex: Membro, Diácono' },
+          { name: 'since', label: 'Membro Desde', type: 'date' },
+          { name: 'photo', label: 'Foto do Membro', type: 'image' },
+          { name: 'validity', label: 'Validade', type: 'date' },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return (
+          <div className="flex items-center justify-center h-full p-8 bg-gray-100">
+            <div className="w-[500px] h-[316px] bg-white rounded-xl shadow-xl overflow-hidden relative flex border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-full bg-blue-600 transform skew-x-[-15deg] translate-x-10"></div>
+              <div className="absolute top-0 right-0 w-2 h-full bg-blue-400 transform skew-x-[-15deg] translate-x-[-80px]"></div>
+              
+              <div className="z-10 flex flex-col justify-between p-6 w-full">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="font-bold text-lg text-blue-900 leading-tight uppercase max-w-[250px]">{data.churchName || 'Nome da Igreja'}</h2>
+                    <p className="text-xs text-blue-500 font-medium tracking-widest uppercase mt-1">Membro</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                    <Icons.Users className="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div className="flex gap-6 mt-4 items-end">
+                  <div className="w-24 h-32 bg-gray-200 rounded-lg overflow-hidden border-2 border-white shadow-md flex-shrink-0">
+                    {data.photo ? (
+                      <img src={data.photo} alt="Foto" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                        <Icons.Users className="w-8 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-grow space-y-2 pb-1">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase">Nome</p>
+                      <p className="font-bold text-gray-900 text-lg leading-none">{data.memberName || 'Nome do Membro'}</p>
+                    </div>
+                    <div className="flex gap-4">
+                       <div>
+                        <p className="text-[10px] text-gray-400 uppercase">Cargo</p>
+                        <p className="font-medium text-gray-800 text-sm">{data.role || 'Membro'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase">Desde</p>
+                        <p className="font-medium text-gray-800 text-sm">{data.since ? new Date(data.since).toLocaleDateString() : '--/--'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                 <div className="text-[10px] text-gray-400 text-right mt-2">
+                    Validade: {data.validity ? new Date(data.validity).toLocaleDateString() : 'Indeterminada'}
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+      },
+      {
+        id: 'certificate_baptism',
+        name: 'Certificado de Batismo',
+        description: 'Elegante, para batismos nas águas.',
+        icon: <Icons.Scroll className="w-6 h-6" />,
+        color: 'bg-emerald-100 text-emerald-600',
+        fields: [
+          { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
+          { name: 'recipientName', label: 'Nome do Batizando', type: 'text', required: true },
+          { name: 'date', label: 'Data do Batismo', type: 'date', required: true },
+          { name: 'ministerName', label: 'Nome do Pastor', type: 'text', required: true },
+          { name: 'city', label: 'Cidade', type: 'text' },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return (
+          <div className="p-8 bg-white h-full border-[16px] border-double border-emerald-900 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center text-emerald-900 pointer-events-none">
+                <DoveIcon />
+            </div>
+
+            <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 z-10 border-2 border-emerald-100 text-emerald-600">
+               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M7 12v-3c0-1.5.5-2.5 2-3"/><path d="M17 12v-3c0-1.5-.5-2.5-2-3"/><path d="M12 12V3"/></svg>
+            </div>
+            
+            <h1 className="text-5xl font-serif font-bold text-emerald-900 mb-2 z-10">CERTIFICADO</h1>
+            <p className="text-xl text-emerald-600 mb-10 tracking-[0.3em] uppercase z-10 font-medium">De Batismo</p>
+            
+            <p className="text-xl text-gray-500 mb-4 z-10 italic font-serif">Certificamos que</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6 border-b border-emerald-300 pb-4 px-12 min-w-[400px] z-10 font-script">
+              {data.recipientName || 'Nome do Membro'}
+            </h2>
+            
+            <p className="text-gray-600 max-w-2xl mb-12 z-10 text-lg leading-relaxed">
+              Foi batizado(a) em nome do Pai, do Filho e do Espírito Santo, conforme a confissão de sua fé, 
+              em cerimônia realizada na <strong>{data.churchName || 'Igreja Local'}</strong> no dia <strong>{data.date ? new Date(data.date).toLocaleDateString() : '[Data]'}</strong>.
+            </p>
+
+            <div className="flex justify-center gap-16 w-full max-w-3xl mt-8 px-8 z-10">
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-full h-px bg-gray-400 mt-1 mb-2"></div>
+                <span className="font-bold text-emerald-900 text-lg">{data.ministerName || 'Pastor Presidente'}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider">Oficiante</span>
+              </div>
+            </div>
+          </div>
+        )}
+      },
+      {
+        id: 'marriage',
+        name: 'Certidão de Casamento',
+        description: 'Religioso com efeito civil ou cerimônia.',
+        icon: <Icons.Heart className="w-6 h-6" />,
+        color: 'bg-rose-100 text-rose-600',
+        fields: [
+           { name: 'churchName', label: 'Nome da Igreja', type: 'text', required: true },
+           { name: 'spouse1', label: 'Cônjuge 1', type: 'text', required: true },
+           { name: 'spouse2', label: 'Cônjuge 2', type: 'text', required: true },
+           { name: 'date', label: 'Data da Cerimônia', type: 'date', required: true },
+           { name: 'ministerName', label: 'Oficiante', type: 'text', required: true },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return (
+          <div className="p-10 bg-white h-full border-4 border-rose-900/20 flex flex-col items-center text-center shadow-sm relative font-serif">
+             <div className="absolute top-0 left-0 w-full h-full border-[20px] border-white pointer-events-none"></div>
+             <div className="absolute top-4 left-4 right-4 bottom-4 border border-rose-200 pointer-events-none flex items-center justify-center">
+                <div className="opacity-10"><RingsIcon /></div>
+             </div>
+
+             <div className="z-10 mt-12 mb-8">
+                <h1 className="text-6xl text-rose-900 font-script mb-4">Matrimônio</h1>
+                <p className="text-gray-500 uppercase tracking-widest text-sm">O amor jamais acaba - 1 Coríntios 13:8</p>
+             </div>
+
+             <div className="z-10 flex-grow flex flex-col justify-center w-full max-w-3xl">
+                <p className="text-xl text-gray-600 italic mb-8">Unidos pelo sagrado laço do matrimônio na presença de Deus e destas testemunhas</p>
+                
+                <div className="flex items-end justify-center gap-4 mb-4">
+                    <div className="flex-1 text-right border-b border-gray-300 pb-2">
+                        <span className="text-2xl font-bold text-gray-800">{data.spouse1 || 'Cônjuge 1'}</span>
+                    </div>
+                    <div className="text-rose-400 font-script text-3xl">&</div>
+                    <div className="flex-1 text-left border-b border-gray-300 pb-2">
+                        <span className="text-2xl font-bold text-gray-800">{data.spouse2 || 'Cônjuge 2'}</span>
+                    </div>
+                </div>
+
+                <p className="text-gray-600 mt-8">
+                    Cerimônia realizada em <strong>{data.date ? new Date(data.date).toLocaleDateString() : '[Data]'}</strong><br/>
+                    na <strong>{data.churchName || 'Igreja'}</strong>
+                </p>
+             </div>
+
+             <div className="z-10 mb-16 w-full max-w-md">
+                 <div className="border-t border-black pt-2 mt-12">
+                     <p className="font-bold text-lg">{data.ministerName || 'Celebrante'}</p>
+                     <p className="text-xs uppercase text-gray-500">Oficiante</p>
+                 </div>
+             </div>
+          </div>
+        )}
+      },
+      {
+        id: 'baby_dedication',
+        name: 'Apresentação de Bebê',
+        description: 'Certificado de consagração de crianças.',
+        icon: <Icons.UserPlus className="w-6 h-6" />,
+        color: 'bg-amber-100 text-amber-600',
+        fields: [
+            { name: 'churchName', label: 'Nome da Igreja', type: 'text' },
+            { name: 'childName', label: 'Nome da Criança', type: 'text', required: true },
+            { name: 'parents', label: 'Nome dos Pais', type: 'text', required: true },
+            { name: 'date', label: 'Data', type: 'date' },
+            { name: 'ministerName', label: 'Pastor', type: 'text' },
+            { name: 'verse', label: 'Versículo (Opcional)', type: 'textarea' },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return (
+          <div className="p-8 bg-amber-50/30 h-full border-8 border-amber-200 flex flex-col items-center text-center shadow-sm relative rounded-xl">
+            <div className="mt-12 mb-6">
+                <h1 className="text-4xl font-serif text-amber-800 font-bold uppercase tracking-widest">Apresentação</h1>
+                <h2 className="text-2xl font-script text-amber-600 mt-2">de Criança</h2>
+            </div>
+
+            <div className="flex-grow flex flex-col justify-center items-center space-y-8 w-full max-w-2xl z-10">
+                <p className="text-lg text-gray-600">
+                    Apresentamos ao Senhor a criança
+                </p>
+                <h3 className="text-4xl font-bold text-gray-800 border-b-2 border-amber-300 pb-2 w-full">
+                    {data.childName || 'Nome da Criança'}
+                </h3>
+                
+                <div>
+                    <p className="text-sm text-gray-500 mb-1">Filho(a) de</p>
+                    <p className="text-xl font-medium text-gray-800">{data.parents || 'Pais'}</p>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-amber-100 max-w-lg">
+                    <p className="italic text-gray-600 font-serif">
+                        "{data.verse || 'Instrui o menino no caminho em que deve andar, e até quando envelhecer não se desviará dele. - Provérbios 22:6'}"
+                    </p>
+                </div>
+
+                <p className="text-sm text-gray-500">
+                    Consagrado(a) no dia <strong>{data.date ? new Date(data.date).toLocaleDateString() : '[Data]'}</strong> na {data.churchName || 'Igreja'}.
+                </p>
+            </div>
+
+            <div className="mb-12 mt-8 w-64 border-t border-gray-400 pt-2">
+                <p className="text-gray-900 font-medium">{data.ministerName || 'Pastor'}</p>
+                <p className="text-xs text-gray-500 uppercase">Pastor Responsável</p>
+            </div>
+          </div>
+        )}
+      },
+      {
+        id: 'transfer_letter',
+        name: 'Carta de Transferência',
+        description: 'Documento formal de recomendação.',
+        icon: <Icons.Send className="w-6 h-6" />,
+        color: 'bg-purple-100 text-purple-600',
+        fields: [
+            { name: 'churchName', label: 'Igreja Remetente', type: 'text', required: true },
+            { name: 'city', label: 'Cidade', type: 'text' },
+            { name: 'memberName', label: 'Nome do Membro', type: 'text', required: true },
+            { name: 'destChurch', label: 'Igreja de Destino', type: 'text' },
+            { name: 'admissionDate', label: 'Data de Admissão', type: 'date' },
+            { name: 'ministerName', label: 'Pastor', type: 'text', required: true },
+        ],
+        render: (data, layout, bg) => {
+            if (layout && layout.length > 0) return renderVisualLayout(data, layout, bg);
+            return (
+          <div className="p-16 bg-white h-full text-left font-serif text-gray-800 leading-relaxed shadow-sm">
+            <header className="border-b-2 border-gray-800 pb-6 mb-8 flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">{data.churchName || 'NOME DA IGREJA'}</h1>
+                    <p className="text-sm text-gray-500 italic">{data.city || 'Cidade/Estado'}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs uppercase font-bold bg-black text-white px-2 py-1">Carta de Transferência</p>
+                </div>
+            </header>
+
+            <main className="space-y-6 text-justify">
+                <p>
+                    Aos amados irmãos em Cristo e à liderança da igreja <strong>{data.destChurch || 'de destino'}</strong>.
+                </p>
+                <p>
+                    A Graça e a Paz do Senhor Jesus.
+                </p>
+                <p>
+                    Pela presente, recomendamos o(a) irmão(ã) <strong>{data.memberName || 'Nome do Membro'}</strong>, 
+                    que tem sido membro desta congregação desde <strong>{data.admissionDate ? new Date(data.admissionDate).toLocaleDateString() : '---'}</strong>, 
+                    estando em plena comunhão e não havendo nada que desabone sua conduta cristã até a presente data.
+                </p>
+                <p>
+                    Sendo o seu desejo unir-se a essa igreja local, nós o(a) desligamos do nosso rol de membros e o(a) recomendamos 
+                    aos vossos cuidados pastorais e fraternais.
+                </p>
+                <p>
+                    Sem mais para o momento, subscrevemo-nos.
+                </p>
+            </main>
+
+            <footer className="mt-24">
+                <p className="mb-12">
+                    {data.city || 'Cidade'}, {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+                </p>
+                
+                <div className="w-64 border-t border-black pt-2">
+                    <p className="font-bold">{data.ministerName || 'Pastor Responsável'}</p>
+                    <p className="text-sm italic">Pastor Presidente</p>
+                </div>
+            </footer>
+          </div>
+        )}
+      }
+    ];
+
+    // --- COMPONENTE PRINCIPAL (APP) ---
+    function App() {
+      const [step, setStep] = useState(1);
+      const [selectedTemplateId, setSelectedTemplateId] = useState('');
+      const [formData, setFormData] = useState({});
+      
+      // State do Editor Visual
+      const [isEditMode, setIsEditMode] = useState(false);
+      const [layoutElements, setLayoutElements] = useState([]);
+      const [customBackground, setCustomBackground] = useState(undefined);
+      const [selectedElementId, setSelectedElementId] = useState(null);
+
+      // State de Templates Salvos
+      const [savedTemplates, setSavedTemplates] = useState([]);
+      
+      // Dragging state
+      const draggingItem = useRef(null);
+      const canvasRef = useRef(null);
+
+      // Helper to get active template
+      const activeTemplate = TEMPLATES.find(t => t.id === selectedTemplateId) || TEMPLATES[0];
+
+      useEffect(() => {
+        // Carregar templates salvos do LocalStorage
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try {
+            setSavedTemplates(JSON.parse(saved));
+          } catch (e) {
+            console.error("Erro ao carregar templates salvos", e);
+          }
+        }
+      }, []);
+
+      useEffect(() => {
+        // Ao selecionar template padrão (não salvo), carregar layout padrão
+        if (selectedTemplateId && !selectedTemplateId.startsWith('saved_')) {
+            const t = TEMPLATES.find(temp => temp.id === selectedTemplateId);
+            if (t) {
+                if (t.defaultLayout) {
+                    setLayoutElements(t.defaultLayout);
+                } else {
+                    setLayoutElements([]);
+                }
+                setCustomBackground(t.defaultBackground);
+            }
+        }
+      }, [selectedTemplateId]);
+
+      // --- Handlers do Formulário de Dados ---
+      const handleTextChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+      };
+
+      const handleFileChange = (e) => {
+        const { name, files } = e.target;
+        if (files && files[0]) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              if(ev.target?.result) {
+                  setFormData(prev => ({ ...prev, [name]: ev.target.result }));
+              }
+          }
+          reader.readAsDataURL(files[0]);
+        }
+      };
+
+      // --- Handlers do Editor Visual ---
+      const handleDragStart = (e, id) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const el = layoutElements.find(item => item.id === id);
+        if (!el) return;
+        
+        setSelectedElementId(id);
+        draggingItem.current = {
+            id,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialElX: el.x,
+            initialElY: el.y
+        };
+        
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+      };
+
+      const handleMouseMove = (e) => {
+        if (!draggingItem.current) return;
+        
+        const { startX, startY, initialElX, initialElY } = draggingItem.current;
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        // Calcular nova posição
+        let newX = initialElX + deltaX;
+        let newY = initialElY + deltaY;
+
+        // Constraints
+        newX = Math.max(-50, Math.min(newX, A4_WIDTH_PX - 50));
+        newY = Math.max(-50, Math.min(newY, A4_HEIGHT_PX - 20));
+
+        setLayoutElements(prev => prev.map(item => 
+            item.id === draggingItem.current?.id ? { ...item, x: newX, y: newY } : item
+        ));
+      };
+
+      const handleMouseUp = () => {
+        draggingItem.current = null;
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      const updateElementStyle = (id, key, value) => {
+        setLayoutElements(prev => prev.map(item => 
+            item.id === id ? { ...item, [key]: value } : item
+        ));
+      };
+
+      const addElement = (fieldDef) => {
+          const newId = Date.now().toString();
+          const newEl = {
+              id: newId,
+              fieldKey: fieldDef === 'static' ? 'static_text' : fieldDef.name,
+              label: fieldDef === 'static' ? 'Novo Texto' : `{${fieldDef.label}}`,
+              x: A4_WIDTH_PX / 2 - 100,
+              y: A4_HEIGHT_PX / 2,
+              fontSize: 16,
+              isStaticText: fieldDef === 'static',
+              color: '#000000',
+              align: 'left'
+          };
+          setLayoutElements(prev => [...prev, newEl]);
+          setSelectedElementId(newId);
+      };
+
+      const removeElement = (id) => {
+          setLayoutElements(prev => prev.filter(el => el.id !== id));
+          setSelectedElementId(null);
+      };
+
+      const handleBackgroundUpload = (e) => {
+          if (e.target.files && e.target.files[0]) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                  if(ev.target?.result) {
+                      setCustomBackground(ev.target.result);
+                  }
+              }
+              reader.readAsDataURL(e.target.files[0]);
+          }
+      };
+
+      // --- Salvar / Carregar Templates ---
+      const handleSaveTemplate = () => {
+          const name = prompt("Dê um nome para o seu modelo:", "Meu Modelo Personalizado");
+          if (!name) return;
+
+          const newTemplate = {
+              id: `saved_${Date.now()}`,
+              name,
+              createdAt: Date.now(),
+              layout: layoutElements,
+              background: customBackground
+          };
+
+          const updated = [...savedTemplates, newTemplate];
+          setSavedTemplates(updated);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          alert("Modelo salvo com sucesso! Você pode encontrá-lo na tela inicial.");
+      };
+
+      const handleDeleteTemplate = (e, id) => {
+          e.stopPropagation();
+          if (confirm("Tem certeza que deseja excluir este modelo?")) {
+              const updated = savedTemplates.filter(t => t.id !== id);
+              setSavedTemplates(updated);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          }
+      };
+
+      const handleLoadSavedTemplate = (saved) => {
+          setSelectedTemplateId('custom_upload'); 
+          setLayoutElements(saved.layout);
+          setCustomBackground(saved.background);
+          setIsEditMode(false); 
+          setStep(2);
+      };
+
+      // --- Navegação ---
+      const handleTemplateSelect = (id) => {
+        setSelectedTemplateId(id);
+        const template = TEMPLATES.find(t => t.id === id);
+        if (id === 'custom_upload') {
+            setIsEditMode(true);
+            setStep(1.5); 
+        } else {
+            setIsEditMode(false);
+        }
+      };
+
+      const proceedToData = () => {
+          setStep(2);
+      };
+
+      const handlePrint = () => {
+        window.print();
+      };
+
+      const handleEmailSimulation = () => {
+        const subject = encodeURIComponent(`Documento: ${activeTemplate.name}`);
+        const body = encodeURIComponent(`Olá,\n\nSegue em anexo o documento gerado.\n\nAtenciosamente,\nSecretaria`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      };
+
+      // --- Renders ---
+      const renderFieldInput = (field) => {
+        const commonClasses = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400";
+        
+        switch (field.type) {
+          case 'textarea':
+            return (
+              <div key={field.name} className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                <textarea
+                  name={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={handleTextChange}
+                  className={`${commonClasses} min-h-[100px]`}
+                  placeholder={field.placeholder}
+                />
+              </div>
+            );
+          case 'image':
+          case 'file':
+            return (
+              <div key={field.name} className="md:col-span-2">
+                 <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                 <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                      <Icons.Upload className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm text-gray-700">Escolher Arquivo</span>
+                      <input 
+                        type="file" 
+                        name={field.name}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </label>
+                    {formData[field.name] && (
+                      <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                        <Icons.CheckCircle className="w-3 h-3" /> Imagem carregada
+                      </span>
+                    )}
+                 </div>
+              </div>
+            );
+          case 'date':
+             return (
+              <div key={field.name}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                <input
+                  type="date"
+                  name={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={handleTextChange}
+                  className={commonClasses}
+                />
+              </div>
+             );
+          default:
+            return (
+              <div key={field.name}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                <input
+                  type={field.type === 'currency' ? 'text' : field.type}
+                  name={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={handleTextChange}
+                  className={commonClasses}
+                  placeholder={field.placeholder}
+                />
+              </div>
+            );
+        }
+      };
+
+      const renderStepIndicator = (num, label) => {
+        let currentStepForUI = step;
+        if (step === 1.5) currentStepForUI = 1; 
+        
+        const isActive = step >= num;
+        const isCurrent = Math.floor(step) === num;
+
+        return (
+          <div className={`flex items-center gap-2 ${isActive ? 'text-indigo-700' : 'text-gray-400'}`}>
+            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all duration-300 ${
+              isActive 
+                ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                : 'border-gray-200 bg-white text-gray-400'
+            } ${isCurrent ? 'ring-2 ring-offset-2 ring-indigo-200' : ''}`}>
+              {num}
+            </span>
+            <span className="hidden sm:inline font-medium">{label}</span>
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50/50 text-gray-900 font-sans selection:bg-indigo-100">
+          
+          {/* HEADER */}
+          <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-white/90">
+            <div className="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setStep(1)}>
+                <div className="bg-indigo-600 text-white p-2 rounded-xl shadow-lg shadow-indigo-200">
+                  <Icons.Church className="w-6 h-6" />
+                </div>
+                <div>
+                    <h1 className="font-bold text-xl tracking-tight text-gray-900 leading-none">Ecclesia<span className="text-indigo-600">Docs</span></h1>
+                    <p className="text-xs text-gray-500 font-medium tracking-wide uppercase">Secretaria Digital</p>
+                </div>
+              </div>
+              
+              <div className="hidden md:flex items-center gap-4">
+                {renderStepIndicator(1, 'Modelo')}
+                <div className={`w-12 h-0.5 ${step >= 2 ? 'bg-indigo-200' : 'bg-gray-100'}`}></div>
+                {renderStepIndicator(2, 'Dados')}
+                <div className={`w-12 h-0.5 ${step >= 3 ? 'bg-indigo-200' : 'bg-gray-100'}`}></div>
+                {renderStepIndicator(3, 'Gerar')}
+              </div>
+
+              <div className="flex items-center gap-3">
+                 {step === 2 && (
+                     <button 
+                        onClick={() => { setIsEditMode(true); setStep(1.5); }}
+                        className="flex items-center gap-2 text-sm text-indigo-600 font-medium hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
+                     >
+                         <Icons.Edit3 className="w-4 h-4" /> Editar Layout
+                     </button>
+                 )}
+                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Icons.Settings className="w-5 h-5" />
+                 </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
+            
+            {/* STEP 1: TEMPLATE SELECTION */}
+            {step === 1 && (
+              <div className="animate-fade-in space-y-16">
+                 
+                 <div>
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2 font-serif">Escolha o Modelo</h2>
+                        <p className="text-gray-500">Selecione o tipo de documento ou crie um do zero.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                        {TEMPLATES.map((template) => (
+                            <button 
+                            key={template.id}
+                            onClick={() => handleTemplateSelect(template.id)}
+                            className={`relative flex flex-col h-full text-left rounded-2xl border-2 transition-all duration-300 group overflow-hidden
+                                ${selectedTemplateId === template.id 
+                                ? 'border-indigo-600 bg-white ring-4 ring-indigo-50 shadow-xl scale-[1.02]' 
+                                : 'border-transparent bg-white shadow-sm hover:shadow-md hover:border-gray-200'
+                                }`}
+                            >
+                            <div className={`p-6 flex-grow flex flex-col items-center text-center`}>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${template.color} transition-transform group-hover:scale-110 duration-300`}>
+                                {template.icon}
+                                </div>
+                                <h3 className="font-bold text-lg text-gray-900 mb-2 font-serif">{template.name}</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">{template.description}</p>
+                            </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {savedTemplates.length > 0 && (
+                     <div className="max-w-6xl mx-auto border-t border-gray-200 pt-10">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                            <Icons.Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                            Meus Modelos Salvos
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {savedTemplates.map((saved) => (
+                                <button 
+                                    key={saved.id}
+                                    onClick={() => handleLoadSavedTemplate(saved)}
+                                    className="relative flex flex-col h-full text-left rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden"
+                                >
+                                    <div className="p-5 flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                            <Icons.FileEdit className="w-6 h-6" />
+                                        </div>
+                                        <div className="flex-grow min-w-0">
+                                            <h4 className="font-bold text-gray-900 truncate">{saved.name}</h4>
+                                            <p className="text-xs text-gray-500">Salvo em {new Date(saved.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <div 
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
+                                            onClick={(e) => handleDeleteTemplate(e, saved.id)}
+                                            title="Excluir Modelo"
+                                        >
+                                            <Icons.Trash2 className="w-4 h-4" />
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                     </div>
+                )}
+
+                <div className="flex justify-center pt-4">
+                    <button 
+                        onClick={() => {
+                             if (!selectedTemplateId) return;
+                             if (selectedTemplateId === 'custom_upload') {
+                                 setStep(1.5);
+                                 setIsEditMode(true);
+                             } else {
+                                 setStep(2);
+                                 setIsEditMode(false);
+                             }
+                        }}
+                        disabled={!selectedTemplateId}
+                        className={`px-10 py-3 rounded-xl font-medium flex items-center gap-2 transition-all transform
+                        ${selectedTemplateId 
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:-translate-y-0.5 cursor-pointer' 
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                    >
+                        Continuar <Icons.ArrowRight className="w-5 h-5" />
+                    </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 1.5: VISUAL EDITOR (DESIGN MODE) */}
+            {step === 1.5 && (
+                <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] gap-6 animate-fade-in">
+                    
+                    {/* Editor Toolbar */}
+                    <div className="w-full lg:w-72 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col gap-4 overflow-y-auto">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
+                            <Icons.Layout className="w-4 h-4" /> Editor de Layout
+                        </h3>
+
+                        {/* Background Upload */}
+                        <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 transition-all hover:border-indigo-300">
+                            <div className="flex justify-between items-center mb-2">
+                               <label className="text-xs font-semibold text-gray-600 block">Imagem de Fundo (A4)</label>
+                               {customBackground && (
+                                   <button 
+                                     onClick={() => setCustomBackground(undefined)} 
+                                     className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 hover:bg-red-50 px-1.5 py-0.5 rounded transition-colors"
+                                     title="Remover fundo"
+                                   >
+                                       <Icons.Trash2 className="w-3 h-3" />
+                                   </button>
+                               )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                 <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 flex-1 text-center flex items-center justify-center gap-2 transition-all shadow-sm">
+                                    <Icons.Image className="w-4 h-4 text-indigo-500" />
+                                    {customBackground ? 'Trocar Imagem' : 'Carregar Imagem'}
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
+                                 </label>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2 text-center">Tamanho recomendado: 794x1123px (A4 Portrait)</p>
+                        </div>
+
+                        {/* Add Fields */}
+                        <div>
+                            <label className="text-xs font-semibold text-gray-500 mb-2 block">Adicionar Campos</label>
+                            <div className="grid grid-cols-1 gap-2">
+                                {activeTemplate.fields.map(field => (
+                                    <button 
+                                        key={field.name}
+                                        onClick={() => addElement(field)}
+                                        className="text-left text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded hover:bg-indigo-100 flex items-center gap-2"
+                                    >
+                                        <Icons.Plus className="w-3 h-3" /> {field.label}
+                                    </button>
+                                ))}
+                                <button 
+                                    onClick={() => addElement('static')}
+                                    className="text-left text-xs bg-gray-100 text-gray-700 px-3 py-2 rounded hover:bg-gray-200 flex items-center gap-2"
+                                >
+                                    <Icons.Type className="w-3 h-3" /> Texto Fixo
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Element Properties */}
+                        {selectedElementId && (
+                            <div className="border-t pt-4 mt-auto">
+                                 <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-bold text-gray-900">Propriedades</span>
+                                    <button 
+                                        onClick={() => removeElement(selectedElementId)}
+                                        className="text-red-500 hover:text-red-700"
+                                        title="Remover"
+                                    >
+                                        <Icons.Trash2 className="w-4 h-4" />
+                                    </button>
+                                 </div>
+                                 
+                                 {(() => {
+                                     const el = layoutElements.find(e => e.id === selectedElementId);
+                                     if (!el) return null;
+                                     return (
+                                         <div className="space-y-2">
+                                             {el.isStaticText && (
+                                                <div>
+                                                    <label className="text-[10px] text-gray-500">Texto</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={el.label} 
+                                                        onChange={(e) => updateElementStyle(el.id, 'label', e.target.value)}
+                                                        className="w-full text-xs p-1 border rounded"
+                                                    />
+                                                </div>
+                                             )}
+
+                                             <div>
+                                                <label className="text-[10px] text-gray-500">Estilo da Fonte</label>
+                                                <select 
+                                                    value={el.fontFamily || 'Playfair Display, serif'}
+                                                    onChange={(e) => updateElementStyle(el.id, 'fontFamily', e.target.value)}
+                                                    className="w-full text-xs p-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-white"
+                                                >
+                                                    <option value="Playfair Display, serif">Clássico (Serif)</option>
+                                                    <option value="Inter, sans-serif">Moderno (Sans)</option>
+                                                    <option value="Great Vibes, cursive">Manuscrito (Script)</option>
+                                                    <option value="Roboto Mono, monospace">Máquina (Mono)</option>
+                                                </select>
+                                             </div>
+
+                                             <div className="flex gap-2">
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] text-gray-500">Tam. Fonte</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={el.fontSize} 
+                                                        onChange={(e) => updateElementStyle(el.id, 'fontSize', Number(e.target.value))}
+                                                        className="w-full text-xs p-1 border rounded"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] text-gray-500">Cor</label>
+                                                    <input 
+                                                        type="color" 
+                                                        value={el.color || '#000000'} 
+                                                        onChange={(e) => updateElementStyle(el.id, 'color', e.target.value)}
+                                                        className="w-full h-6 border rounded cursor-pointer"
+                                                    />
+                                                </div>
+                                             </div>
+                                             <div>
+                                                <label className="text-[10px] text-gray-500">Alinhamento</label>
+                                                <div className="flex bg-gray-100 rounded p-1 gap-1">
+                                                    {['left', 'center', 'right'].map(align => (
+                                                        <button
+                                                            key={align}
+                                                            onClick={() => updateElementStyle(el.id, 'align', align)}
+                                                            className={`flex-1 text-[10px] py-1 rounded ${el.align === align ? 'bg-white shadow' : 'text-gray-500'}`}
+                                                        >
+                                                            {align === 'left' ? 'Esq' : align === 'center' ? 'Cen' : 'Dir'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                             </div>
+                                         </div>
+                                     )
+                                 })()}
+                            </div>
+                        )}
+                        
+                        <div className="mt-4 pt-4 border-t space-y-2">
+                            <button 
+                                onClick={handleSaveTemplate}
+                                className="w-full border border-indigo-600 text-indigo-600 bg-indigo-50 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 flex items-center justify-center gap-2"
+                            >
+                                <Icons.Save className="w-4 h-4" /> Salvar Modelo
+                            </button>
+
+                            <button 
+                                onClick={proceedToData}
+                                className="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center justify-center gap-2"
+                            >
+                                Preencher Dados <Icons.ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Canvas Area */}
+                    <div className="flex-grow bg-gray-200 rounded-xl overflow-auto flex justify-center p-8 border-2 border-dashed border-gray-300">
+                        <div 
+                            ref={canvasRef}
+                            className="bg-white shadow-xl relative overflow-hidden"
+                            style={{ 
+                                width: `${A4_WIDTH_PX}px`, 
+                                height: `${A4_HEIGHT_PX}px`,
+                                minWidth: `${A4_WIDTH_PX}px`,
+                                minHeight: `${A4_HEIGHT_PX}px`
+                            }}
+                        >
+                            {customBackground && (
+                                <img 
+                                    src={customBackground} 
+                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" 
+                                    alt="Background" 
+                                />
+                            )}
+                            
+                            <div className="absolute inset-0 pointer-events-none opacity-20" style={{
+                                backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px)',
+                                backgroundSize: '20px 20px'
+                            }}></div>
+
+                            {layoutElements.map(el => (
+                                <div
+                                    key={el.id}
+                                    onMouseDown={(e) => handleDragStart(e, el.id)}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
+                                    className={`absolute cursor-move select-none hover:ring-1 hover:ring-indigo-300 z-10 
+                                        ${selectedElementId === el.id ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''}`}
+                                    style={{
+                                        left: `${el.x}px`,
+                                        top: `${el.y}px`,
+                                        fontSize: `${el.fontSize}px`,
+                                        fontFamily: el.fontFamily || 'serif',
+                                        color: el.color || '#000',
+                                        width: el.width ? `${el.width}px` : 'auto',
+                                        textAlign: el.align || 'left',
+                                        whiteSpace: 'pre-wrap'
+                                    }}
+                                >
+                                    {el.isStaticText ? el.label : el.label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* STEP 2: FORM DATA */}
+            {step === 2 && (
+              <div className="animate-fade-in max-w-4xl mx-auto">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 font-serif">Preencha os Dados</h2>
+                  <p className="text-gray-500">Campos personalizados para: <strong>{activeTemplate.name}</strong></p>
+                </div>
+                
+                <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {activeTemplate.fields.map(field => renderFieldInput(field))}
+                  </div>
+
+                  <div className="mt-10 flex justify-between pt-6 border-t border-gray-100">
+                    <button 
+                        onClick={() => {
+                            if (isEditMode) setStep(1.5);
+                            else setStep(1);
+                        }}
+                        className="text-gray-500 hover:text-gray-900 px-6 py-3 font-medium flex items-center gap-2 transition-colors"
+                    >
+                        <Icons.ArrowLeft className="w-5 h-5" /> Voltar
+                    </button>
+                    <button 
+                      onClick={() => setStep(3)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-0.5"
+                    >
+                      Gerar Documento <Icons.ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: PREVIEW & ACTION */}
+            {step === 3 && (
+              <div className="animate-fade-in flex flex-col lg:flex-row gap-8 items-start h-[calc(100vh-140px)]">
+                
+                {/* Sidebar de Ações */}
+                <div className="w-full lg:w-80 flex-shrink-0 order-2 lg:order-1 h-full lg:overflow-y-auto pb-10 no-print">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="font-bold text-lg text-gray-900 mb-6 font-serif border-b border-gray-100 pb-4">Finalizar</h3>
+                    
+                    <div className="space-y-4">
+                      <button 
+                        onClick={handlePrint}
+                        className="w-full bg-gray-900 hover:bg-gray-800 text-white p-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        <Icons.Printer className="w-5 h-5" />
+                        <span className="font-medium">Imprimir / PDF</span>
+                      </button>
+                      
+                      <button 
+                        onClick={handleEmailSimulation}
+                        className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 p-4 rounded-xl flex items-center justify-center gap-3 transition-colors border border-indigo-200 font-medium"
+                      >
+                        <Icons.Mail className="w-5 h-5" />
+                        Enviar (Simulado)
+                      </button>
+
+                      <button 
+                        onClick={() => setStep(2)}
+                        className="w-full bg-white text-gray-600 hover:bg-gray-50 p-4 rounded-xl flex items-center justify-center gap-3 transition-colors border border-gray-200 font-medium group"
+                      >
+                        <Icons.FileEdit className="w-5 h-5 group-hover:text-indigo-600" />
+                        Editar Dados
+                      </button>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Campos Principais</h4>
+                      <div className="space-y-3">
+                         {activeTemplate.fields.slice(0,3).map(field => (
+                            <div key={field.name} className="flex flex-col">
+                                <span className="text-xs text-gray-400">{field.label}</span>
+                                <span className="text-sm font-medium text-gray-900 truncate">
+                                    {String(formData[field.name] || '-').substring(0,20)}
+                                </span>
+                            </div>
+                         ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document Preview Area */}
+                <div className="w-full lg:flex-grow order-1 lg:order-2 h-full flex flex-col">
+                  <div className="bg-gray-200/80 p-6 md:p-12 rounded-2xl overflow-y-auto overflow-x-hidden border border-gray-300 shadow-inner flex-grow flex items-start justify-center relative scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 print:bg-white print:p-0 print:border-none print:shadow-none print:overflow-visible">
+                    
+                    <div 
+                      className={`bg-white shadow-2xl print:shadow-none relative transform origin-top transition-transform duration-300 scale-fix
+                      ${activeTemplate.id === 'id_card' && !isEditMode ? 'w-auto h-auto scale-100' : 'w-[794px] min-h-[1123px] scale-[0.45] sm:scale-[0.6] md:scale-[0.75] xl:scale-100'} `}
+                      style={isEditMode || activeTemplate.id === 'custom_upload' ? { width: '794px', height: '1123px' } : {}}
+                    >
+                      {(isEditMode || activeTemplate.id === 'custom_upload')
+                        ? activeTemplate.render(formData, layoutElements, customBackground) 
+                        : activeTemplate.render(formData)
+                      }
+                    </div>
+
+                  </div>
+                  <div className="text-center mt-4 no-print">
+                     <p className="text-gray-400 text-sm flex items-center justify-center gap-2">
+                        <Icons.Layout className="w-4 h-4" /> Visualização em tempo real
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
